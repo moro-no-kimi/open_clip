@@ -154,7 +154,7 @@ class CoCa(nn.Module):
         text_latent, _ = self._encode_text(text, normalize=normalize)
         return text_latent
 
-    def forward(
+    def encode(
             self,
             image,
             text: Optional[torch.Tensor] = None,
@@ -184,7 +184,7 @@ class CoCa(nn.Module):
             out_dict["logit_bias"] = self.logit_bias
         return out_dict
 
-    def generate(
+    def forward(
         self,
         image,
         text=None,
@@ -276,7 +276,7 @@ class CoCa(nn.Module):
             while True:
                 x = out[:, -max_seq_len:]
                 cur_len = x.shape[1]
-                logits = self(image, x, image_latent=image_latent, image_embs=image_embs)["logits"][:, -1]
+                logits = self.encode(image, x, image_latent=image_latent, image_embs=image_embs)["logits"][:, -1]
                 mask = (out[:, -1] == eos_token_id) | (out[:, -1] == pad_token_id)
                 sample = torch.ones((out.shape[0], 1), device=device, dtype=torch.long) * pad_token_id
 
@@ -368,7 +368,7 @@ class CoCa(nn.Module):
 
             # do one decoder step on all beams of all sentences in batch
             model_inputs = prepare_inputs_for_generation(input_ids=input_ids, image_inputs=image_inputs)
-            outputs = self(
+            outputs = self.encode(
                 model_inputs['images'],
                 model_inputs['text'],
                 image_latent=image_latent,
